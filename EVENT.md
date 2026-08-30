@@ -2,7 +2,7 @@
 
 - Team ID: `LSH26-T058`
 - Problem ID: `P02`
-- Event start code: `LSH26-START-2026`
+- Event start code: `LSH26-8490-C900`
 
 ## Material present before 6:00 PM
 
