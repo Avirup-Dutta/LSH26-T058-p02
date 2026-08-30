@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PharmCheck BD • Pharmacy Expiry Shelf & At-Risk Inventory</title>
+  <meta name="description" content="State-of-the-art pharmacy shelf check & expiry management dashboard for Bangladeshi pharmacies. Identifies expiring stock, manages distributor returns to Square, Beximco, Incepta, and safeguards pharmacy cashflow.">
+  
+  <!-- Modern Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+
+  <div class="app-container">
+    
+    <!-- Top Modern Navigation Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="brand-badge">
+          <div class="brand-icon">
+            <i data-lucide="shield-alert"></i>
+          </div>
+          <div>
+            <div class="brand-title">
+              PharmCheck <span class="brand-tag">BD Edition</span>
+            </div>
+            <div class="brand-subtitle">Bangladesh Pharmacy Expiry &amp; Distributor Return System</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <div class="today-banner">
+          <div class="live-pulse" title="Dynamic real-time expiry calculation active"></div>
+          <i data-lucide="calendar" style="width:14px;height:14px;color:var(--brand-primary);"></i>
+          <span>Today: <strong id="current-date-display">Loading date...</strong></span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button class="btn btn-outline" id="btn-export-csv" title="Export current inventory to CSV">
+          <i data-lucide="download"></i>
+          <span>Export CSV</span>
+        </button>
+        <button class="btn btn-primary" id="btn-open-add-modal" title="Add a new medicine batch to shelf">
+          <i data-lucide="plus-circle"></i>
+          <span>Add Medicine</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Dashboard Grid -->
+    <main class="main-content">
+      
+      <!-- 4 Expiry Status KPI Cards -->
+      <section class="kpi-grid">
+        <!-- Expired Card -->
+        <div class="kpi-card card-danger" data-filter-trigger="expired" id="kpi-expired-card" title="Click to view Expired medicines">
+          <div class="kpi-glass-reflect"></div>
+          <div class="kpi-header">
+            <div class="kpi-icon-wrap icon-danger">
+              <i data-lucide="alert-octagon"></i>
+            </div>
+            <span class="kpi-badge badge-danger">Passed Expiry</span>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-title">🔴 Expired Stock</div>
+            <div class="kpi-value" id="kpi-expired-val">৳ 0.00</div>
+            <div class="kpi-subtext">
+              <strong id="kpi-expired-count">0</strong> medicines (<span id="kpi-expired-units">0</span> units)
+            </div>
+          </div>
+          <div class="kpi-footer-bar">
+            <span>Action: Immediate distributor claim</span>
+            <i data-lucide="arrow-right"></i>
+          </div>
+        </div>
+
+        <!-- 30 Days Card -->
+        <div class="kpi-card card-warning" data-filter-trigger="within30" id="kpi-30-card" title="Click to view medicines expiring within 30 days">
+          <div class="kpi-glass-reflect"></div>
+          <div class="kpi-header">
+            <div class="kpi-icon-wrap icon-warning">
+              <i data-lucide="alert-triangle"></i>
+            </div>
+            <span class="kpi-badge badge-warning">0 – 30 Days</span>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-title">🟠 Expiring Soon</div>
+            <div class="kpi-value" id="kpi-30-val">৳ 0.00</div>
+            <div class="kpi-subtext">
+              <strong id="kpi-30-count">0</strong> medicines (<span id="kpi-30-units">0</span> units)
+            </div>
+          </div>
+          <div class="kpi-footer-bar">
+            <span>Urgent: Return to distributor before loss</span>
+            <i data-lucide="arrow-right"></i>
+          </div>
+        </div>
+
+        <!-- 90 Days Card -->
+        <div class="kpi-card card-caution" data-filter-trigger="within90" id="kpi-90-card" title="Click to view medicines expiring in 31-90 days">
+          <div class="kpi-glass-reflect"></div>
+          <div class="kpi-header">
+            <div class="kpi-icon-wrap icon-caution">
+              <i data-lucide="clock"></i>
+            </div>
+            <span class="kpi-badge badge-caution">31 – 90 Days</span>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-title">🟡 Upcoming Watchlist</div>
+            <div class="kpi-value" id="kpi-90-val">৳ 0.00</div>
+            <div class="kpi-subtext">
+              <strong id="kpi-90-count">0</strong> medicines (<span id="kpi-90-units">0</span> units)
+            </div>
+          </div>
+          <div class="kpi-footer-bar">
+            <span>Watchlist: Shelf rotation / promotion</span>
+            <i data-lucide="arrow-right"></i>
+          </div>
+        </div>
+
+        <!-- Safe Card -->
+        <div class="kpi-card card-success" data-filter-trigger="safe" id="kpi-safe-card" title="Click to view safe medicines">
+          <div class="kpi-glass-reflect"></div>
+          <div class="kpi-header">
+            <div class="kpi-icon-wrap icon-success">
+              <i data-lucide="shield-check"></i>
+            </div>
+            <span class="kpi-badge badge-success">&gt; 90 Days</span>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-title">🟢 Safe Stock</div>
+            <div class="kpi-value" id="kpi-safe-val">৳ 0.00</div>
+            <div class="kpi-subtext">
+              <strong id="kpi-safe-count">0</strong> medicines (<span id="kpi-safe-units">0</span> units)
+            </div>
+          </div>
+          <div class="kpi-footer-bar">
+            <span>Optimal shelf-life rotation</span>
+            <i data-lucide="arrow-right"></i>
+          </div>
+        </div>
+      </section>
+
+      <!-- Overview: Financial Risk Spotlight & 6-Month Chart -->
+      <section class="overview-section">
+        <!-- Money At Risk Spotlight Panel -->
+        <div class="risk-spotlight-panel">
+          <div class="spotlight-header">
+            <div class="spotlight-title-wrap">
+              <div class="pulse-danger-dot"></div>
+              <h3>Total Money at Immediate Risk</h3>
+            </div>
+            <span class="spotlight-formula">🔴 Expired (৳<span id="spotlight-exp-part">0.00</span>) + 🟠 ≤30d (৳<span id="spotlight-30-part">0.00</span>)</span>
+          </div>
+
+          <div class="spotlight-main">
+            <div class="spotlight-amount" id="total-risk-val">৳ 0.00</div>
+            
+            <!-- Risk Progress Ratio Bar -->
+            <div class="risk-bar-container">
+              <div class="risk-bar-labels">
+                <span>Inventory Risk Exposure</span>
+                <strong id="total-risk-pct">0.0%</strong>
+              </div>
+              <div class="risk-progress-track">
+                <div class="risk-progress-fill" id="risk-progress-fill" style="width:0%;"></div>
+              </div>
+            </div>
+
+            <div class="spotlight-meta">
+              <div class="meta-item">
+                <span class="meta-label"><i data-lucide="boxes" style="width:13px;height:13px;"></i> Active Inventory Value:</span>
+                <span class="meta-value" id="total-active-val">৳ 0.00</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label"><i data-lucide="truck" style="width:13px;height:13px;"></i> Total Returned Value:</span>
+                <span class="meta-value text-purple" id="total-returned-val">৳ 0.00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6-Month Interactive Expiry Timeline Chart -->
+        <div class="chart-panel">
+          <div class="chart-header">
+            <div>
+              <h3 class="chart-title">Expiring Value Forecast — Next 6 Months</h3>
+              <p class="chart-subtitle">Monthly purchase value at risk in Bangladeshi Taka (৳)</p>
+            </div>
+            <div class="chart-legend-custom">
+              <span class="dot dot-danger"></span> Expired
+              <span class="dot dot-warning"></span> M1 (Urgent)
+              <span class="dot dot-caution"></span> M2-M3
+              <span class="dot dot-success"></span> M4-M6
+            </div>
+          </div>
+          <div class="chart-canvas-container">
+            <canvas id="expiryRiskChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Inventory Management Table Section -->
+      <section class="table-section">
+        
+        <!-- Tab Navigation & Filters Toolbar -->
+        <div class="toolbar">
+          <!-- Left: Tab Status Filter Buttons -->
+          <div class="tab-group" role="tablist">
+            <button class="tab-btn active" data-tab="all" id="tab-all">
+              <i data-lucide="layers"></i>
+              <span>All Active</span>
+              <span class="tab-count" id="count-tab-all">0</span>
+            </button>
+            <button class="tab-btn tab-btn-danger" data-tab="expired" id="tab-expired">
+              <span class="status-indicator dot-danger"></span>
+              <span>Expired</span>
+              <span class="tab-count" id="count-tab-expired">0</span>
+            </button>
+            <button class="tab-btn tab-btn-warning" data-tab="within30" id="tab-within30">
+              <span class="status-indicator dot-warning"></span>
+              <span>≤ 30 Days</span>
+              <span class="tab-count" id="count-tab-within30">0</span>
+            </button>
+            <button class="tab-btn tab-btn-caution" data-tab="within90" id="tab-within90">
+              <span class="status-indicator dot-caution"></span>
+              <span>31–90 Days</span>
+              <span class="tab-count" id="count-tab-within90">0</span>
+            </button>
+            <button class="tab-btn tab-btn-success" data-tab="safe" id="tab-safe">
+              <span class="status-indicator dot-success"></span>
+              <span>Safe (&gt;90d)</span>
+              <span class="tab-count" id="count-tab-safe">0</span>
+            </button>
+            <button class="tab-btn tab-btn-purple" data-tab="returned" id="tab-returned">
+              <i data-lucide="truck"></i>
+              <span>Returned to Distributor</span>
+              <span class="tab-count" id="count-tab-returned">0</span>
+            </button>
+          </div>
+
+          <!-- Right: Search, Category & Sort Tools -->
+          <div class="filter-group">
+            <div class="search-input-wrap">
+              <i data-lucide="search"></i>
+              <input type="text" id="inventory-search" placeholder="Search Napa, Seclo, Square, batch..." autocomplete="off">
+              <button class="clear-search-btn" id="btn-clear-search" style="display:none;" title="Clear search">&times;</button>
+            </div>
+
+            <div class="select-wrap">
+              <select id="category-filter" title="Filter by category">
+                <option value="all">All Categories</option>
+                <option value="Antibiotics">Antibiotics</option>
+                <option value="Analgesics / Pain">Analgesics / Pain</option>
+                <option value="Cardiovascular">Cardiovascular</option>
+                <option value="Antidiabetic">Antidiabetic</option>
+                <option value="Respiratory">Respiratory</option>
+                <option value="Gastrointestinal">Gastrointestinal</option>
+                <option value="Dermatology">Dermatology</option>
+                <option value="Vitamins / Supplements">Vitamins / Supplements</option>
+                <option value="Emergency / Critical">Emergency / Critical</option>
+              </select>
+            </div>
+
+            <div class="select-wrap">
+              <select id="sort-select" title="Sort medicines">
+                <option value="expiry-asc">Sort: Expiry (Urgent First)</option>
+                <option value="expiry-desc">Sort: Expiry (Furthest First)</option>
+                <option value="value-desc">Sort: Value (High → Low)</option>
+                <option value="value-asc">Sort: Value (Low → High)</option>
+                <option value="name-asc">Sort: Name (A to Z)</option>
+                <option value="qty-desc">Sort: Quantity (High → Low)</option>
+              </select>
+            </div>
+
+            <button class="btn btn-secondary btn-icon-only" id="btn-print-manifest" title="Print Official DGDA Distributor Return Manifest" style="display:none;">
+              <i data-lucide="printer"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Bulk Action Bar -->
+        <div class="bulk-action-bar" id="bulk-action-bar" style="display:none;">
+          <div class="bulk-info">
+            <i data-lucide="check-circle-2"></i>
+            <span><strong id="selected-count">0</strong> medicines selected</span>
+            <span class="bulk-val-tag">Selected Claim Value: ৳ <span id="selected-value">0.00</span></span>
+          </div>
+          <div class="bulk-buttons">
+            <button class="btn btn-warning btn-sm" id="btn-bulk-return">
+              <i data-lucide="truck"></i> Return Selected to Distributor
+            </button>
+            <button class="btn btn-outline btn-sm" id="btn-clear-selection">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Data Table Container -->
+        <div class="table-responsive">
+          <table class="data-table" id="medicines-table">
+            <thead>
+              <tr>
+                <th class="th-checkbox">
+                  <input type="checkbox" id="select-all-checkbox" title="Select all visible medicines">
+                </th>
+                <th>Medicine Name &amp; Category</th>
+                <th>Batch No.</th>
+                <th>Quantity</th>
+                <th>Unit Price (৳)</th>
+                <th>Total Value (৳)</th>
+                <th>Expiry Date</th>
+                <th>Status &amp; Days Left</th>
+                <th class="th-actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inventory-tbody">
+              <!-- Dynamically rendered -->
+            </tbody>
+          </table>
+
+          <!-- Empty State -->
+          <div class="empty-state" id="empty-state" style="display:none;">
+            <div class="empty-icon"><i data-lucide="package-search"></i></div>
+            <h4 id="empty-title">No medicines found</h4>
+            <p id="empty-subtitle">Try clearing search keywords or switching filter tabs.</p>
+            <button class="btn btn-primary btn-sm" id="btn-empty-add" style="margin-top:14px;">
+              <i data-lucide="plus-circle"></i> Add New Medicine
+            </button>
+          </div>
+        </div>
+
+        <!-- Table Footer Stats & Legend -->
+        <div class="table-footer">
+          <div class="footer-stats" id="table-summary-stats">
+            Showing <strong id="visible-count">0</strong> of <strong id="total-count">0</strong> items
+          </div>
+          <div class="footer-legend">
+            <span class="legend-item"><span class="badge-dot dot-danger"></span> 🔴 Expired (Past date)</span>
+            <span class="legend-item"><span class="badge-dot dot-warning"></span> 🟠 0–30 Days (Immediate Return)</span>
+            <span class="legend-item"><span class="badge-dot dot-caution"></span> 🟡 31–90 Days (Upcoming)</span>
+            <span class="legend-item"><span class="badge-dot dot-success"></span> 🟢 &gt;90 Days (Safe)</span>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Modal: Quick Add / Create Medicine -->
+    <div class="modal-overlay" id="add-modal" style="display:none;">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <div class="modal-icon"><i data-lucide="pill"></i></div>
+            <div>
+              <h3>Add Medicine</h3>
+              <p>Enter batch details or choose quick shelf-life presets</p>
+            </div>
+          </div>
+          <button type="button" class="modal-close" id="btn-close-add-modal" aria-label="Close modal">&times;</button>
+        </div>
+
+        <form id="add-medicine-form">
+          <div class="modal-body">
+            
+            <div class="form-row">
+              <div class="form-group flex-2">
+                <label for="med-name">Medicine Name &amp; Strength <span class="required">*</span></label>
+                <input type="text" id="med-name" required placeholder="e.g. Napa Extra 500mg, Seclo 20mg, Monas 10mg" autocomplete="off">
+              </div>
+              <div class="form-group flex-1">
+                <label for="med-category">Category</label>
+                <select id="med-category">
+                  <option value="Analgesics / Pain">Analgesics / Pain</option>
+                  <option value="Gastrointestinal">Gastrointestinal</option>
+                  <option value="Antibiotics">Antibiotics</option>
+                  <option value="Cardiovascular">Cardiovascular</option>
+                  <option value="Antidiabetic">Antidiabetic</option>
+                  <option value="Respiratory">Respiratory</option>
+                  <option value="Dermatology">Dermatology</option>
+                  <option value="Vitamins / Supplements">Vitamins / Supplements</option>
+                  <option value="Emergency / Critical">Emergency / Critical</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="med-batch">Batch Number <span class="required">*</span></label>
+                <input type="text" id="med-batch" required placeholder="e.g. SQ-NP-2026" class="font-mono">
+              </div>
+              <div class="form-group">
+                <label for="med-distributor">Pharmaceutical Company / Distributor</label>
+                <input type="text" id="med-distributor" placeholder="e.g. Square Pharmaceuticals PLC, Beximco, Incepta">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="med-qty">Quantity (Strips/Units/Boxes) <span class="required">*</span></label>
+                <input type="number" id="med-qty" required min="1" max="10000" placeholder="e.g. 100">
+              </div>
+              <div class="form-group">
+                <label for="med-price">Unit Purchase Price (৳ BDT) <span class="required">*</span></label>
+                <input type="number" id="med-price" required min="0.10" step="0.10" placeholder="e.g. 3.00, 15.00">
+              </div>
+            </div>
+
+            <!-- Expiry Selection with Quick Shelf Life Presets -->
+            <div class="form-group">
+              <label for="med-expiry">Expiry Date <span class="required">*</span></label>
+              <div class="expiry-input-container">
+                <input type="date" id="med-expiry" required>
+              </div>
+              
+              <div class="preset-buttons-group">
+                <span class="preset-label">Quick Shelf-Life Presets (Auto-sets Expiry Date):</span>
+                <div class="preset-btns">
+                  <button type="button" class="btn-preset preset-danger" data-days="-15">🔴 Expired (-15d)</button>
+                  <button type="button" class="btn-preset preset-warning" data-days="15">🟠 15 Days (Urgent)</button>
+                  <button type="button" class="btn-preset preset-warning" data-days="30">🟠 30 Days</button>
+                  <button type="button" class="btn-preset preset-caution" data-days="60">🟡 2 Months</button>
+                  <button type="button" class="btn-preset preset-caution" data-days="90">🟡 3 Months</button>
+                  <button type="button" class="btn-preset preset-success" data-days="180">🟢 6 Months</button>
+                  <button type="button" class="btn-preset preset-success" data-days="365">🟢 1 Year</button>
+                  <button type="button" class="btn-preset preset-success" data-days="730">🟢 2 Years</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-preview-box" id="form-preview-box">
+              <div class="preview-item">
+                <span>Calculated Stock Value:</span>
+                <strong id="preview-total-val">৳ 0.00</strong>
+              </div>
+              <div class="preview-item">
+                <span>Computed Shelf Status:</span>
+                <span class="preview-status" id="preview-status-pill">Select date</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Sticky Visible Modal Footer with Primary Create Button -->
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" id="btn-cancel-add-modal">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-lg" id="btn-create-medicine-submit">
+              <i data-lucide="plus-circle"></i>
+              <span>Create Medicine</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Return to Distributor Confirmation & Details -->
+    <div class="modal-overlay" id="return-modal" style="display:none;">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <div class="modal-icon return-icon"><i data-lucide="truck"></i></div>
+            <div>
+              <h3>Return to Distributor (DGDA Protocol)</h3>
+              <p>Remove from active shelf &amp; initiate credit claim</p>
+            </div>
+          </div>
+          <button type="button" class="modal-close" id="btn-close-return-modal">&times;</button>
+        </div>
+
+        <form id="return-medicine-form">
+          <div class="modal-body">
+            <div class="return-item-summary" id="return-item-summary">
+              <!-- Rendered dynamically -->
+            </div>
+
+            <div class="form-group">
+              <label for="return-reason">Return Reason</label>
+              <select id="return-reason">
+                <option value="Expired Product (DGDA Claim)">Expired Product (Distributor Credit Claim)</option>
+                <option value="Approaching Expiry (≤30d Standard Policy)">Approaching Expiry (≤30d Standard Policy)</option>
+                <option value="Slow Moving / Near Expiry">Slow Moving / Approaching Expiry</option>
+                <option value="Manufacturer Batch Recall">Manufacturer Batch Recall</option>
+                <option value="Overstocked shelf adjustment">Overstocked shelf adjustment</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="return-ref">Distributor Delivery Challan / RMA # (Optional)</label>
+              <input type="text" id="return-ref" placeholder="e.g. RMA-DHK-2026-8819 or SQ-CHALLAN-99" class="font-mono">
+            </div>
+
+            <div class="form-group">
+              <label for="return-notes">Pharmacist Notes</label>
+              <textarea id="return-notes" rows="2" placeholder="e.g. Packed in return box #2 for Square Pharmaceuticals Dhaka depot pickup"></textarea>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" id="btn-cancel-return-modal">Cancel</button>
+            <button type="submit" class="btn btn-warning btn-lg" id="btn-confirm-return">
+              <i data-lucide="truck"></i> Confirm Return
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Database & Storage Management Console -->
+    <div class="modal-overlay" id="db-modal" style="display:none;">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <div class="modal-icon db-icon"><i data-lucide="database"></i></div>
+            <div>
+              <h3>SQLite Database Manager (pharmacy.db)</h3>
+              <p>Physical SQLite 3 Database in project folder with BDT (৳) dataset</p>
+            </div>
+          </div>
+          <button type="button" class="modal-close" id="btn-close-db-modal">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          
+          <div class="db-console-card">
+            <div class="db-stats-grid">
+              <div class="db-stat-box">
+                <div class="db-stat-num" id="db-stat-active">0</div>
+                <div class="db-stat-lbl">Active Medicines</div>
+              </div>
+              <div class="db-stat-box">
+                <div class="db-stat-num" id="db-stat-returned">0</div>
+                <div class="db-stat-lbl">Returned Records</div>
+              </div>
+              <div class="db-stat-box">
+                <div class="db-stat-num" id="db-stat-storage">pharmacy.db</div>
+                <div class="db-stat-lbl">SQLite 3 File</div>
+              </div>
+            </div>
+
+            <div class="db-actions-row">
+              <button class="btn btn-secondary btn-sm" id="btn-download-json-backup">
+                <i data-lucide="download"></i> Export JSON Backup
+              </button>
+              <button class="btn btn-secondary btn-sm" id="btn-download-sql-dump">
+                <i data-lucide="file-code"></i> Download SQL Schema &amp; Data
+              </button>
+              <label class="btn btn-outline btn-sm" style="cursor:pointer; margin:0;">
+                <i data-lucide="upload"></i> Restore JSON Backup
+                <input type="file" id="input-restore-json" accept=".json" style="display:none;">
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Database Diagnostics &amp; SQL Schema (SQLite / PostgreSQL Compatible)</label>
+            <textarea id="db-sql-preview" rows="5" class="font-mono" style="font-size:0.75rem;" readonly>
+-- PharmCheck BD Database Schema (SQLite 3 - pharmacy.db)
+CREATE TABLE medicines (
+  id VARCHAR(50) PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  category VARCHAR(100),
+  batch VARCHAR(100) NOT NULL,
+  distributor VARCHAR(255),
+  qty INTEGER NOT NULL,
+  price DECIMAL(10,2) NOT NULL, -- Price in Bangladeshi Taka (৳)
+  expiry DATE NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE returned_medicines (
+  id VARCHAR(50) PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  batch VARCHAR(100) NOT NULL,
+  category VARCHAR(100),
+  distributor VARCHAR(255),
+  qty INTEGER NOT NULL,
+  price DECIMAL(10,2) NOT NULL,
+  expiry DATE NOT NULL,
+  returned_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  return_reason VARCHAR(255),
+  return_ref VARCHAR(100),
+  return_notes TEXT
+);
+            </textarea>
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger btn-sm" id="btn-wipe-database" title="Clear all records from pharmacy.db">
+            <i data-lucide="trash-2"></i> Wipe All Data
+          </button>
+          <button type="button" class="btn btn-outline" id="btn-close-db-modal-footer">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Printable Distributor Manifest Slip -->
+    <div class="modal-overlay" id="manifest-modal" style="display:none;">
+      <div class="modal-card modal-lg">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <div class="modal-icon"><i data-lucide="file-text"></i></div>
+            <div>
+              <h3>Distributor Return Manifest &amp; Credit Claim</h3>
+              <p>Official dispatch document for Bangladeshi pharmaceutical distributor claims</p>
+            </div>
+          </div>
+          <button type="button" class="modal-close" id="btn-close-manifest-modal">&times;</button>
+        </div>
+
+        <div class="modal-body manifest-content" id="manifest-printable-area">
+          <!-- Dynamically generated manifest -->
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="btn-close-manifest">Close</button>
+          <button type="button" class="btn btn-primary" id="btn-trigger-print">
+            <i data-lucide="printer"></i> Print Manifest
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

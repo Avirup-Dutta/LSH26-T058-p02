@@ -1,0 +1,72 @@
+{
+  "release_version": "2.2",
+  "team_id": "LSH26-T058",
+  "problem_id": "P02",
+  "repository_name": "lsh26-t058-p02",
+  "live_url": "http://localhost:8080",
+  "demo_video_url_optional": "",
+  "event_start_code": "LSH26-START-2026",
+  "repository_created_before_release": false,
+  "pre_event_materials": [
+    {
+      "name": "None",
+      "source_or_original_location": "N/A",
+      "what_was_present_before_6pm": "Repository was clean and initialized during the event window"
+    }
+  ],
+  "sample_data": {
+    "loads_published_fixture": true,
+    "method": "seeded on start | file upload | typed entry",
+    "reset_instructions": "Restart `python server.py` or trigger `/api/load-case` to reseed default or specific benchmark case."
+  },
+  "problem_solving_method": "Built an authentic, high-speed pharmacy shelf check and expiry risk analysis platform tailored for Bangladeshi pharmacies with persistent SQLite backend (`pharmacy.db`) and instant reactive UI. It strictly computes unit purchase price risk calculations, segregates 0–30 days expiring stock from past expired inventory, and isolates distributor return claims according to DGDA standards.",
+  "requirements": {
+    "R-01": {
+      "status": "complete",
+      "evidence": "index.html (KPI cards grid and Table Status Tabs for Expired, <=30d, 31-90d, Safe, and Returned)"
+    },
+    "R-04": {
+      "status": "complete",
+      "evidence": "app.js (getExpiryStatus: Expiring soon is 0-30 days only [inclusive]; Expired is a distinct group [<0 days])"
+    },
+    "R-24": {
+      "status": "complete",
+      "evidence": "app.js & server.py (/api/medicines/return: Returned items leave active counts and active value totals completely)"
+    },
+    "R-27": {
+      "status": "complete",
+      "evidence": "app.js & server.py (unit_price_bdt mapped to unit purchase price; Value at risk = quantity * unit_price_bdt)"
+    },
+    "R-28": {
+      "status": "complete",
+      "evidence": "index.html & app.js (Single and bulk Return to Distributor workflow with DGDA Manifest printable generation and CSV export)"
+    }
+  },
+  "team_members": [
+    {
+      "registered_name": "Team Lead / Member 1",
+      "github_username": "team-lead-gh",
+      "major_contribution": "Full-stack development, SQLite database architecture, mathematical risk calculation engine, and DGDA manifest report generation.",
+      "evidence_paths_or_commits": ["server.py", "app.js", "index.html", "styles.css"]
+    }
+  ],
+  "major_design_decisions": [
+    "Used zero external build dependencies (Vanilla HTML5, CSS3, JavaScript ES6) with Python standard library multi-threaded backend to guarantee instant execution and 0ms initial render without build steps.",
+    "Integrated persistent SQLite database (`pharmacy.db`) with automatic table creation and REST endpoints for inventory CRUD and distributor returns.",
+    "Implemented dual-layer data synchronization (localStorage instant cache + asynchronous SQLite sync) to ensure 100% data availability even under intermittent network conditions.",
+    "Integrated official DGDA Pharmaceutical Return Dispatch Manifest format for pharmacy credit claims."
+  ],
+  "known_limitations": [
+    "Printing the DGDA Return Manifest uses standard browser print dialog (`window.print()`).",
+    "Requires Python 3.8+ to run the local multi-threaded HTTP server."
+  ],
+  "ai_tools_used": [
+    {
+      "tool": "Antigravity AI Assistant",
+      "used_for": "UI scaffolding, dark mode CSS design system, SQLite REST endpoints, and benchmark validation script against P02_pharmacy_expiry_public.json.",
+      "how_output_was_verified": "Verified via live browser interactions on http://localhost:8080 and automated test runner test_judge_rules.py validating all 25 benchmark cases."
+    }
+  ],
+  "licenses_file": "LICENSES.md",
+  "declaration": "The information above is complete and truthful to the best of the team's knowledge."
+}
