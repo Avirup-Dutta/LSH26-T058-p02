@@ -3,7 +3,7 @@
 **Team ID:** `LSH26-T058`  
 **Problem ID:** `P02` (Pharmacy Expiry Shelf Check)  
 **Repository Name:** `lsh26-t058-p02`  
-**Live URL:** `http://localhost:8080`  
+**Live URL:** `lsh-26-t058-p02.vercel.app`  
 
 ---
 
